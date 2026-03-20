@@ -926,20 +926,17 @@
       formData.append('email', email);
       formData.append('discipline', selectedDisc);
 
-      const response = await fetch(WEBHOOK_URL, {
-        method: 'POST',
-        body: formData
-      });
+    fetch(WEBHOOK_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: formData
+    }).catch(() => {});
 
-      overlay.classList.remove('active');
-
-      if (response.ok || response.status === 200) {
-        document.getElementById('successEmail').textContent = email;
-        setStep(3);
-        showScreen('screen3');
-      } else {
-        showToast('Something went wrong — please try again');
-      }
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    overlay.classList.remove('active');
+    document.getElementById('successEmail').textContent = email;
+    setStep(3);
+    showScreen('screen3');
     } catch (err) {
       overlay.classList.remove('active');
       showToast('Connection error — check your internet and try again');
