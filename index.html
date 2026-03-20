@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>RehabScribe</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #181c27;
+    --surface2: #1e2333;
+    --border: #2a3045;
+    --text: #e8eaf0;
+    --text-muted: #7a8099;
+    --ot: #4a9eff;
+    --pt: #3dd68c;
+    --slp: #f97b6b;
+    --record: #ff4757;
+    --record-glow: rgba(255,71,87,0.3);
+    --gold: #f4c842;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 0 40px;
+    overflow-x: hidden;
+  }
+
+  /* Header */
+  .header {
+    width: 100%;
+    padding: 28px 24px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+  }
+
+  .logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 28px;
+    letter-spacing: -0.5px;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .logo span {
+    font-style: italic;
+    color: var(--gold);
+  }
+
+  .tagline {
+    font-size: 12px;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  /* Main card */
+  .card {
+    width: calc(100% - 32px);
+    max-width: 420px;
+    margin-top: 28px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    overflow: hidden;
+  }
+
+  /* Step indicator */
+  .steps {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .step {
+    flex: 1;
+    padding: 14px 0;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    position: relative;
+    transition: color 0.3s;
+  }
+
+  .step.active {
+    color: var(--text);
+  }
+
+  .step.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 20%;
+    width: 60%;
+    height: 2px;
+    background: var(--gold);
+    border-radius: 2px;
+  }
+
+  .step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--border);
+    font-size: 10px;
+    margin-right: 5px;
+    transition: background 0.3s;
+  }
+
+  .step.active .step-num {
+    background: var(--gold);
+    color: #000;
+  }
+
+  .step.done .step-num {
+    background: var(--pt);
+    color: #000;
+  }
+
+  .step.done {
+    color: var(--pt);
+  }
+
+  /* Screen panels */
+  .screen {
+    display: none;
+    padding: 28px 24px;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .screen.active {
+    display: block;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Screen 1 — Discipline */
+  .screen-label {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+  }
+
+  .discipline-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+
+  .disc-btn {
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 8px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .disc-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .disc-btn.ot::before { background: radial-gradient(circle at center, rgba(74,158,255,0.15), transparent 70%); }
+  .disc-btn.pt::before { background: radial-gradient(circle at center, rgba(61,214,140,0.15), transparent 70%); }
+  .disc-btn.slp::before { background: radial-gradient(circle at center, rgba(249,123,107,0.15), transparent 70%); }
+
+  .disc-btn:active { transform: scale(0.96); }
+
+  .disc-btn.selected.ot { border-color: var(--ot); }
+  .disc-btn.selected.pt { border-color: var(--pt); }
+  .disc-btn.selected.slp { border-color: var(--slp); }
+  .disc-btn.selected::before { opacity: 1; }
+
+  .disc-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+
+  .disc-btn.ot .disc-icon { background: rgba(74,158,255,0.15); }
+  .disc-btn.pt .disc-icon { background: rgba(61,214,140,0.15); }
+  .disc-btn.slp .disc-icon { background: rgba(249,123,107,0.15); }
+
+  .disc-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    transition: color 0.2s;
+  }
+
+  .disc-sublabel {
+    font-size: 10px;
+    color: var(--text-muted);
+    opacity: 0.6;
+    text-align: center;
+    line-height: 1.3;
+  }
+
+  .disc-btn.selected .disc-label { color: var(--text); }
+
+  /* Email field */
+  .field-label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .field-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+  }
+
+  .field-input:focus {
+    border-color: var(--gold);
+  }
+
+  .field-input::placeholder {
+    color: var(--text-muted);
+    opacity: 0.5;
+  }
+
+  /* Screen 2 — Record */
+  .record-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 0 8px;
+  }
+
+  .discipline-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 28px;
+    letter-spacing: 0.04em;
+  }
+
+  .discipline-badge.ot { background: rgba(74,158,255,0.15); color: var(--ot); border: 1px solid rgba(74,158,255,0.3); }
+  .discipline-badge.pt { background: rgba(61,214,140,0.15); color: var(--pt); border: 1px solid rgba(61,214,140,0.3); }
+  .discipline-badge.slp { background: rgba(249,123,107,0.15); color: var(--slp); border: 1px solid rgba(249,123,107,0.3); }
+
+  .record-btn-wrap {
+    position: relative;
+    margin-bottom: 20px;
+  }
+
+  .record-pulse {
+    position: absolute;
+    inset: -12px;
+    border-radius: 50%;
+    background: var(--record-glow);
+    animation: none;
+    opacity: 0;
+  }
+
+  .record-pulse.pulsing {
+    animation: pulse 1.5s ease-in-out infinite;
+    opacity: 1;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.6; }
+    50% { transform: scale(1.15); opacity: 0.2; }
+  }
+
+  .record-btn {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    background: var(--record);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: transform 0.15s, background 0.2s;
+    box-shadow: 0 0 0 0 var(--record-glow);
+  }
+
+  .record-btn:active { transform: scale(0.93); }
+
+  .record-btn.recording {
+    background: #ff6b6b;
+  }
+
+  .record-icon {
+    transition: all 0.2s;
+  }
+
+  .record-status {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    height: 20px;
+    text-align: center;
+    transition: color 0.2s;
+  }
+
+  .record-status.recording {
+    color: var(--record);
+  }
+
+  .timer {
+    font-family: 'DM Serif Display', serif;
+    font-size: 36px;
+    color: var(--text);
+    letter-spacing: 2px;
+    margin-bottom: 28px;
+    height: 44px;
+    opacity: 0.3;
+    transition: opacity 0.3s;
+  }
+
+  .timer.active {
+    opacity: 1;
+  }
+
+  /* Waveform */
+  .waveform {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    height: 32px;
+    margin-bottom: 24px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .waveform.active { opacity: 1; }
+
+  .wave-bar {
+    width: 3px;
+    background: var(--record);
+    border-radius: 2px;
+    height: 4px;
+    transition: height 0.1s;
+  }
+
+  .waveform.active .wave-bar {
+    animation: wave 0.8s ease-in-out infinite;
+  }
+
+  .wave-bar:nth-child(1) { animation-delay: 0s; }
+  .wave-bar:nth-child(2) { animation-delay: 0.1s; }
+  .wave-bar:nth-child(3) { animation-delay: 0.2s; }
+  .wave-bar:nth-child(4) { animation-delay: 0.3s; }
+  .wave-bar:nth-child(5) { animation-delay: 0.15s; }
+  .wave-bar:nth-child(6) { animation-delay: 0.05s; }
+  .wave-bar:nth-child(7) { animation-delay: 0.25s; }
+  .wave-bar:nth-child(8) { animation-delay: 0.35s; }
+  .wave-bar:nth-child(9) { animation-delay: 0.1s; }
+  .wave-bar:nth-child(10) { animation-delay: 0.2s; }
+
+  @keyframes wave {
+    0%, 100% { height: 4px; }
+    50% { height: 24px; }
+  }
+
+  /* Recorded preview */
+  .recorded-preview {
+    display: none;
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .recorded-preview.visible { display: flex; }
+
+  .preview-icon {
+    width: 36px;
+    height: 36px;
+    background: rgba(61,214,140,0.15);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .preview-info { flex: 1; }
+  .preview-name { font-size: 13px; font-weight: 500; color: var(--text); }
+  .preview-size { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  .preview-redo {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 11px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: color 0.2s;
+  }
+
+  .preview-redo:hover { color: var(--text); }
+
+  /* Primary button */
+  .btn-primary {
+    width: 100%;
+    background: var(--gold);
+    color: #000;
+    border: none;
+    border-radius: 14px;
+    padding: 17px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.01em;
+  }
+
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-primary:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+
+  .btn-secondary {
+    width: 100%;
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 15px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 10px;
+  }
+
+  .btn-secondary:active { transform: scale(0.98); }
+
+  /* Screen 3 — Success */
+  .success-screen {
+    text-align: center;
+    padding: 40px 24px;
+  }
+
+  .success-icon {
+    width: 72px;
+    height: 72px;
+    background: rgba(61,214,140,0.15);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @keyframes popIn {
+    from { transform: scale(0); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .success-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 26px;
+    margin-bottom: 8px;
+  }
+
+  .success-sub {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin-bottom: 28px;
+  }
+
+  .success-sub strong {
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  /* Loading state */
+  .loading-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15,17,23,0.85);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 16px;
+    backdrop-filter: blur(4px);
+  }
+
+  .loading-overlay.active { display: flex; }
+
+  .spinner {
+    width: 44px;
+    height: 44px;
+    border: 3px solid var(--border);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text {
+    font-size: 14px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  /* Footer */
+  .footer {
+    margin-top: 20px;
+    font-size: 11px;
+    color: var(--text-muted);
+    opacity: 0.5;
+    text-align: center;
+    letter-spacing: 0.04em;
+  }
+
+  /* Error toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: #2d1a1a;
+    border: 1px solid var(--record);
+    color: var(--text);
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 500;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 200;
+    white-space: nowrap;
+    max-width: calc(100vw - 48px);
+  }
+
+  .toast.visible {
+    transform: translateX(-50%) translateY(0);
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">Rehab<span>Scribe</span></div>
+  <div class="tagline">AI Documentation · OT · PT · SLP</div>
+</div>
+
+<div class="card">
+  <!-- Step indicator -->
+  <div class="steps">
+    <div class="step active" id="step1"><span class="step-num">1</span>Discipline</div>
+    <div class="step" id="step2"><span class="step-num">2</span>Record</div>
+    <div class="step" id="step3"><span class="step-num">3</span>Done</div>
+  </div>
+
+  <!-- Screen 1: Discipline + Email -->
+  <div class="screen active" id="screen1">
+    <div class="screen-label">Select your discipline</div>
+    <div class="discipline-grid">
+      <button class="disc-btn ot" onclick="selectDisc('OT', this)">
+        <div class="disc-icon">🖐️</div>
+        <div class="disc-label">OT</div>
+        <div class="disc-sublabel">Occupational Therapy</div>
+      </button>
+      <button class="disc-btn pt" onclick="selectDisc('PT', this)">
+        <div class="disc-icon">🦵</div>
+        <div class="disc-label">PT</div>
+        <div class="disc-sublabel">Physical Therapy</div>
+      </button>
+      <button class="disc-btn slp" onclick="selectDisc('SLP', this)">
+        <div class="disc-icon">🗣️</div>
+        <div class="disc-label">SLP</div>
+        <div class="disc-sublabel">Speech-Language</div>
+      </button>
+    </div>
+
+    <label class="field-label" for="emailInput">Your email address</label>
+    <input
+      class="field-input"
+      type="email"
+      id="emailInput"
+      placeholder="you@email.com"
+      inputmode="email"
+      autocomplete="email"
+    />
+
+    <div style="height: 20px"></div>
+    <button class="btn-primary" id="toRecordBtn" onclick="goToRecord()" disabled>
+      Continue →
+    </button>
+  </div>
+
+  <!-- Screen 2: Record -->
+  <div class="screen" id="screen2">
+    <div class="record-area">
+      <div class="discipline-badge" id="discBadge"></div>
+
+      <div class="record-btn-wrap">
+        <div class="record-pulse" id="recordPulse"></div>
+        <button class="record-btn" id="recordBtn" onclick="toggleRecord()">
+          <svg class="record-icon" id="recordIcon" width="36" height="36" viewBox="0 0 36 36" fill="none">
+            <circle cx="18" cy="12" r="6" fill="white"/>
+            <path d="M8 18C8 18 8 28 18 28C28 28 28 18 28 18" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="18" y1="28" x2="18" y2="33" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="13" y1="33" x2="23" y2="33" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="record-status" id="recordStatus">Tap to start recording</div>
+
+      <div class="timer" id="timer">0:00</div>
+
+      <div class="waveform" id="waveform">
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+      </div>
+    </div>
+
+    <div class="recorded-preview" id="recordedPreview">
+      <div class="preview-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3dd68c" stroke-width="2" stroke-linecap="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      </div>
+      <div class="preview-info">
+        <div class="preview-name">Voice memo recorded</div>
+        <div class="preview-size" id="previewDuration"></div>
+      </div>
+      <button class="preview-redo" onclick="redoRecording()">Re-record</button>
+    </div>
+
+    <button class="btn-primary" id="submitBtn" onclick="submitNote()" disabled>
+      Generate My Note →
+    </button>
+    <button class="btn-secondary" onclick="goBack()">← Back</button>
+  </div>
+
+  <!-- Screen 3: Success -->
+  <div class="screen" id="screen3">
+    <div class="success-screen">
+      <div class="success-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#3dd68c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      </div>
+      <div class="success-title">Note on its way</div>
+      <div class="success-sub">
+        Your draft will arrive at<br>
+        <strong id="successEmail"></strong><br>
+        within the next minute.
+      </div>
+      <button class="btn-primary" onclick="resetForm()">Submit Another Note</button>
+    </div>
+  </div>
+</div>
+
+<div class="footer">Draft only · Always review before signing</div>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text">Sending to RehabScribe…</div>
+</div>
+
+<!-- Error toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+  const WEBHOOK_URL = 'https://hook.us2.make.com/i3ppnr4eg99fbmvq7z9ut7tu84h3wans';
+
+  let selectedDisc = null;
+  let mediaRecorder = null;
+  let audioChunks = [];
+  let audioBlob = null;
+  let timerInterval = null;
+  let seconds = 0;
+  let isRecording = false;
+  let recordedDuration = 0;
+
+  // Pre-fill email from URL param
+  const urlParams = new URLSearchParams(window.location.search);
+  const emailParam = urlParams.get('email');
+  if (emailParam) {
+    document.getElementById('emailInput').value = emailParam;
+    checkStep1Ready();
+  }
+
+  document.getElementById('emailInput').addEventListener('input', checkStep1Ready);
+
+  function selectDisc(disc, btn) {
+    selectedDisc = disc;
+    document.querySelectorAll('.disc-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    checkStep1Ready();
+  }
+
+  function checkStep1Ready() {
+    const email = document.getElementById('emailInput').value;
+    const valid = selectedDisc && email && email.includes('@') && email.includes('.');
+    document.getElementById('toRecordBtn').disabled = !valid;
+  }
+
+  function goToRecord() {
+    // Update badge
+    const badge = document.getElementById('discBadge');
+    const discMap = {
+      OT: { label: 'Occupational Therapy', cls: 'ot', icon: '🖐️' },
+      PT: { label: 'Physical Therapy', cls: 'pt', icon: '🦵' },
+      SLP: { label: 'Speech-Language Pathology', cls: 'slp', icon: '🗣️' }
+    };
+    const d = discMap[selectedDisc];
+    badge.className = 'discipline-badge ' + d.cls;
+    badge.innerHTML = d.icon + ' ' + selectedDisc + ' · ' + d.label;
+
+    setStep(2);
+    showScreen('screen2');
+  }
+
+  function goBack() {
+    stopRecording(true);
+    setStep(1);
+    showScreen('screen1');
+  }
+
+  function setStep(n) {
+    document.querySelectorAll('.step').forEach((s, i) => {
+      s.classList.remove('active', 'done');
+      if (i + 1 < n) s.classList.add('done');
+      if (i + 1 === n) s.classList.add('active');
+    });
+  }
+
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  async function toggleRecord() {
+    if (isRecording) {
+      stopRecording(false);
+    } else {
+      await startRecording();
+    }
+  }
+
+  async function startRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioChunks = [];
+      audioBlob = null;
+
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+      mediaRecorder.onstop = () => {
+        audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        stream.getTracks().forEach(t => t.stop());
+        showRecordedPreview();
+      };
+
+      mediaRecorder.start();
+      isRecording = true;
+      seconds = 0;
+
+      // UI updates
+      document.getElementById('recordBtn').classList.add('recording');
+      document.getElementById('recordPulse').classList.add('pulsing');
+      document.getElementById('recordStatus').textContent = 'Recording… tap to stop';
+      document.getElementById('recordStatus').classList.add('recording');
+      document.getElementById('waveform').classList.add('active');
+      document.getElementById('timer').classList.add('active');
+
+      // Change icon to stop square
+      document.getElementById('recordIcon').innerHTML = `<rect x="10" y="10" width="16" height="16" rx="3" fill="white"/>`;
+
+      timerInterval = setInterval(() => {
+        seconds++;
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        document.getElementById('timer').textContent = m + ':' + String(s).padStart(2, '0');
+      }, 1000);
+
+    } catch (err) {
+      showToast('Microphone access denied — please allow mic in your browser settings');
+    }
+  }
+
+  function stopRecording(discard) {
+    if (!isRecording) return;
+    isRecording = false;
+    clearInterval(timerInterval);
+    recordedDuration = seconds;
+
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      if (discard) {
+        mediaRecorder.ondataavailable = null;
+        mediaRecorder.onstop = null;
+      }
+      mediaRecorder.stop();
+    }
+
+    // Reset UI
+    document.getElementById('recordBtn').classList.remove('recording');
+    document.getElementById('recordPulse').classList.remove('pulsing');
+    document.getElementById('recordStatus').textContent = discard ? 'Tap to start recording' : 'Recording complete';
+    document.getElementById('recordStatus').classList.remove('recording');
+    document.getElementById('waveform').classList.remove('active');
+
+    // Restore mic icon
+    document.getElementById('recordIcon').innerHTML = `
+      <circle cx="18" cy="12" r="6" fill="white"/>
+      <path d="M8 18C8 18 8 28 18 28C28 28 28 18 28 18" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="18" y1="28" x2="18" y2="33" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="13" y1="33" x2="23" y2="33" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+    `;
+
+    if (discard) {
+      audioBlob = null;
+      document.getElementById('timer').textContent = '0:00';
+      document.getElementById('timer').classList.remove('active');
+      document.getElementById('recordedPreview').classList.remove('visible');
+      document.getElementById('submitBtn').disabled = true;
+    }
+  }
+
+  function showRecordedPreview() {
+    const m = Math.floor(recordedDuration / 60);
+    const s = recordedDuration % 60;
+    document.getElementById('previewDuration').textContent = m + ':' + String(s).padStart(2, '0') + ' · Ready to submit';
+    document.getElementById('recordedPreview').classList.add('visible');
+    document.getElementById('submitBtn').disabled = false;
+  }
+
+  function redoRecording() {
+    audioBlob = null;
+    document.getElementById('recordedPreview').classList.remove('visible');
+    document.getElementById('submitBtn').disabled = true;
+    document.getElementById('recordStatus').textContent = 'Tap to start recording';
+    document.getElementById('timer').textContent = '0:00';
+    document.getElementById('timer').classList.remove('active');
+  }
+
+  async function submitNote() {
+    if (!audioBlob) return;
+
+    const email = document.getElementById('emailInput').value;
+    const overlay = document.getElementById('loadingOverlay');
+    overlay.classList.add('active');
+
+    try {
+      const formData = new FormData();
+      formData.append('file', audioBlob, 'voice-memo.webm');
+      formData.append('email', email);
+      formData.append('discipline', selectedDisc);
+
+      const response = await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        body: formData
+      });
+
+      overlay.classList.remove('active');
+
+      if (response.ok || response.status === 200) {
+        document.getElementById('successEmail').textContent = email;
+        setStep(3);
+        showScreen('screen3');
+      } else {
+        showToast('Something went wrong — please try again');
+      }
+    } catch (err) {
+      overlay.classList.remove('active');
+      showToast('Connection error — check your internet and try again');
+    }
+  }
+
+  function resetForm() {
+    selectedDisc = null;
+    audioBlob = null;
+    seconds = 0;
+    document.querySelectorAll('.disc-btn').forEach(b => b.classList.remove('selected'));
+    document.getElementById('timer').textContent = '0:00';
+    document.getElementById('timer').classList.remove('active');
+    document.getElementById('recordedPreview').classList.remove('visible');
+    document.getElementById('submitBtn').disabled = true;
+    document.getElementById('toRecordBtn').disabled = true;
+    document.getElementById('recordStatus').textContent = 'Tap to start recording';
+    setStep(1);
+    showScreen('screen1');
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('visible');
+    setTimeout(() => t.classList.remove('visible'), 3500);
+  }
+</script>
+</body>
+</html>
