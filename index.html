@@ -332,9 +332,12 @@
     formData.append('email', email);
     formData.append('discipline', selectedDisc);
 
-    fetch(WEBHOOK_URL, { method: 'POST', mode: 'no-cors', body: formData }).catch(() => {});
+    try {
+      await fetch(WEBHOOK_URL, { method: 'POST', body: formData });
+    } catch(e) {
+      // CORS error on response is fine — Make still receives the data
+    }
 
-    await new Promise(resolve => setTimeout(resolve, 2000));
     overlay.classList.remove('active');
     document.getElementById('successEmail').textContent = email;
     setStep(3);
